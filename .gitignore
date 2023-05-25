@@ -1,5 +1,7 @@
 venv/
+img/**
 json/**
 __pycache__/
+*.pyc
 util/__pycache/
 util/parseSite.py
