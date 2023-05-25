@@ -23,7 +23,7 @@ def makeGraph(loc):
     fig.savefig('img/spectral_graph.png')
 
     # fig.show()
-#makeGraph("json/cleanGraphDeg.json")
+makeGraph("json/cleanGraphDeg.json")
 
 def makeRecursiveAcronymGraph(loc):
     f = open(loc)
@@ -47,5 +47,5 @@ def makeRecursiveAcronymGraph(loc):
     nx.draw(graph, with_labels=True, node_size=sizes, font_size=12, font_color="black")
     fig.savefig('img/recursive_acr_graph.png')
 
-makeRecursiveAcronymGraph("json/cleanGraphDeg.json")
+# makeRecursiveAcronymGraph("json/cleanGraphDeg.json")
 
