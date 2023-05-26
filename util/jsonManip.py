@@ -1,6 +1,5 @@
 import json
 
-
 def cleanData(loc):
     f = open(loc)
     data = json.load(f)
@@ -17,8 +16,8 @@ def cleanData(loc):
 
     return newJson
 
-with open("foo.json", "w+") as outfile:
-    json.dump(cleanData("json/originalGraph.json"), outfile)
+# with open("foo.json", "w+") as outfile:
+#     json.dump(cleanData("json/originalGraph.json"), outfile)
 
 # This takes in a cleaned graph, and
 # adds information about the in-degrees
@@ -46,5 +45,5 @@ def inDegrees(loc, defnPriority=0):
                 (data[entry])["inDeg"] = 0
         return data
 
-with open("foo2.json", "w") as outfile:
-    json.dump(inDegrees("foo.json"), outfile)
+# with open("foo2.json", "w") as outfile:
+#     json.dump(inDegrees("foo.json"), outfile)

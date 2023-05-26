@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 util/__pycache/
 util/parseSite.py
+*.txt

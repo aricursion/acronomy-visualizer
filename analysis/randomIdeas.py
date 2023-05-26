@@ -1,9 +1,10 @@
 import json
 import networkx as nx
 import sys
-# sys.path.append("..") 
+from tqdm import tqdm
+sys.path.append("..") 
 
-#from util.graphLoader import loadGraph
+# from util.graphLoader import loadGraph
 def sCC(loc):
     f = open(loc)
     data = json.load(f)
@@ -17,40 +18,78 @@ def sCC(loc):
 
     return nx.number_strongly_connected_components(graph)
 
-def minWordsNeeded(loc):
+def minWordsNeeded(loc, excludeOneDefn = False):
     f = open(loc)
     data = json.load(f)
     graph = nx.DiGraph()
-
+    # opposite graph defns go to source word
     for elt in data:
         defn = ((data[elt])["values"])[0]
         defn = defn.split(" ")
-        edges = map(lambda w : (elt, w), defn)
+        edges = map(lambda w : (w, elt), defn)
         graph.add_edges_from(edges)
 
-    sccs = nx.strongly_connected_components(graph)
+    graph_copy = graph.copy()
 
-    newGraph = nx.DiGraph()
-    numSCC = 0
-    for rep in sccs:
-        numSCC += 1
-        print(rep)
-        rep = (list(rep))[0]
-        if rep not in data:
-            newGraph.add_node(rep)
-        else:
-            defn = ((data[rep])["values"])[0]
-            defn = defn.split(" ")
-            defn = list(filter(lambda w : {w} in sccs, defn))
-            edges = map(lambda w : (rep, w), defn)
-            newGraph.add_edges_from(edges)
+    if excludeOneDefn:
+        for node in graph:
+            if graph.out_degree(node) <= 2:
+                graph_copy.remove_node(node)
+
+    newGraph = nx.condensation(graph_copy)
+
+
     count = 0
     for node in newGraph:
         if newGraph.in_degree(node) == 0:
             count += 1
-    print("numScc: ", nx.number_strongly_connected_components(graph))
     return count
 
+#print(minWordsNeeded("json/cleanGraphNoDeg.json", excludeOneDefn=True))
 
-print(minWordsNeeded("json/cleanGraphNoDeg.json"))
+def numRecursiveAcronyms(loc):
+    f = open(loc)
+    data = json.load(f)
+    graph = nx.DiGraph()
+    # opposite graph defns go to source word
+    for elt in data:
+        defn = ((data[elt])["values"])[0]
+        defn = defn.split(" ")
+        edges = map(lambda w : (elt, w), defn)
+        if elt in defn:
+            print(elt)
+        graph.add_edges_from(edges)
+    
+    num_cyc = 0
+    short_rec = 0
+    uniqueWords = set()
+    uniqueWordsNum = 0
+    longestCycle = 0
+    previousAccs = []
+    f = open("recAccUnique10.txt", "w+")
+
+    def compareAcc(accr):
+        for acc in previousAccs:
+            count = 0
+            for word in accr:
+                if word in acc:
+                    count += 1
+            if count > 2:
+                return False
+        return True
+    
+    for cyc in nx.simple_cycles(graph, length_bound=10):
+        for w in cyc:
+            if w not in uniqueWords:
+                uniqueWords.add(w)
+                uniqueWordsNum += 1
+        if compareAcc(cyc):
+            previousAccs.append(cyc)
+            print('new unique')
+            print(len(previousAccs))
+            f.write(" ".join(cyc) + "\n\n")
+    return (uniqueWordsNum)
+        
+
+print(numRecursiveAcronyms("json/cleanGraphNoDeg.json"))
 
