@@ -1,22 +1,20 @@
 import json
 import networkx as nx
 import sys
-from tqdm import tqdm
-sys.path.append("..") 
+import os
 
-# from util.graphLoader import loadGraph
+sys.path.append(os.path.abspath('util'))
+from graphLoader import loadGraph
+
 def sCC(loc):
-    f = open(loc)
-    data = json.load(f)
-    graph = nx.DiGraph()
-
-    for elt in data:
-        defn = ((data[elt])["values"])[0]
-        defn = defn.split(" ")
-        edges = map(lambda w : (elt, w), defn)
-        graph.add_edges_from(edges)
-
+    graph = loadGraph(loc)
+    
+    for cc in nx.connected_components(graph.to_undirected()):
+        if len(cc) < 100:
+            print(cc)
     return nx.number_strongly_connected_components(graph)
+
+print(sCC("json/cleanGraphNoDeg.json"))
 
 def minWordsNeeded(loc, excludeOneDefn = False):
     f = open(loc)
@@ -47,24 +45,12 @@ def minWordsNeeded(loc, excludeOneDefn = False):
 
 #print(minWordsNeeded("json/cleanGraphNoDeg.json", excludeOneDefn=True))
 
-def numRecursiveAcronyms(loc):
+def numGenRecursiveAcronyms(loc):
+    graph = loadGraph(loc)
     f = open(loc)
     data = json.load(f)
-    graph = nx.DiGraph()
-    # opposite graph defns go to source word
-    for elt in data:
-        defn = ((data[elt])["values"])[0]
-        defn = defn.split(" ")
-        edges = map(lambda w : (elt, w), defn)
-        if elt in defn:
-            print(elt)
-        graph.add_edges_from(edges)
-    
-    num_cyc = 0
-    short_rec = 0
     uniqueWords = set()
     uniqueWordsNum = 0
-    longestCycle = 0
     previousAccs = []
     f = open("recAccUnique10.txt", "w+")
 
@@ -78,6 +64,30 @@ def numRecursiveAcronyms(loc):
                 return False
         return True
     
+    def extrapolate(cyc):
+        defn = [cyc[0]]
+        print(cyc[0])
+        # print(cyc)
+        def concatenate_lists(list1, list2, element):
+            indices = []
+            for idx, elt in enumerate(list1):
+                if elt == element:
+                    indices.append(idx)
+            if indices != []:
+                for idx in indices:
+                    list1 = list1[:idx] + list2 + list1[idx+1:]
+                return list1
+            else:
+                return list1
+
+        for word in cyc:
+                defn = concatenate_lists(defn, (((data[word])["values"])[0]).split(" "), word)
+
+        defn = concatenate_lists(defn, ["[...]"], cyc[0])
+
+        return " ".join(defn)
+
+        
     for cyc in nx.simple_cycles(graph, length_bound=10):
         for w in cyc:
             if w not in uniqueWords:
@@ -85,11 +95,15 @@ def numRecursiveAcronyms(loc):
                 uniqueWordsNum += 1
         if compareAcc(cyc):
             previousAccs.append(cyc)
-            print('new unique')
-            print(len(previousAccs))
-            f.write(" ".join(cyc) + "\n\n")
+            # print('new unique')
+            # print(len(previousAccs))  
+            extrap = extrapolate(cyc)
+            f.write('"' + " ".join(cyc) + '" stands for:' + "\n")
+            f.write(extrap + "\n\n")
+
+        
     return (uniqueWordsNum)
         
 
-print(numRecursiveAcronyms("json/cleanGraphNoDeg.json"))
+print(numGenRecursiveAcronyms("json/cleanGraphNoDeg.json"))
 
